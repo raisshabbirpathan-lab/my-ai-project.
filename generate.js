@@ -1,5 +1,3 @@
-import { GoogleGenAI } from '@google/genai';
-
 export default async function handler(req, res) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -21,22 +19,26 @@ export default async function handler(req, res) {
 
   try {
     const { prompt, type } = req.body;
-    
-    // Naya GoogleGenAI initialize karein
-    const ai = new GoogleGenAI({ apiKey: apiKey });
-    
     let fullPrompt = `Rewrite the following text into a professional ${type || 'Social Media'} post with relevant emojis and hashtags:\n\n${prompt}`;
 
-    // Ekdum naya aur stable method call
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: fullPrompt,
+    // Direct Google API Call (No package needed)
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: fullPrompt }] }]
+      })
     });
 
-    // Sahi tarike se text response handle karne ke liye
-    const generatedText = response.text || (response.candidates && response.candidates[0]?.content?.parts?.[0]?.text) || "No text generated.";
-
-    return res.status(200).json({ text: generatedText });
+    const data = await response.json();
+    
+    if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+      const generatedText = data.candidates[0].content.parts[0].text;
+      return res.status(200).json({ text: generatedText });
+    } else {
+      console.error("Gemini Error Response:", data);
+      return res.status(500).json({ error: 'Invalid response structure from Gemini' });
+    }
 
   } catch (error) {
     console.error('API Error:', error);
