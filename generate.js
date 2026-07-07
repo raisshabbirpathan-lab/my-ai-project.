@@ -14,23 +14,22 @@ export default async function handler(req, res) {
   const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
   if (!apiKey) {
-    return res.status(500).json({ error: 'API key is missing on backend' });
+    return res.status(500).json({ error: 'API key is missing on Vercel environment variables' });
   }
 
   try {
     const { prompt, type } = req.body;
-    const fullPrompt = `Rewrite the following text into a professional ${type || 'Social Media'} post with relevant emojis and hashtags:\n\n${prompt}`;
+    const fullPrompt = `Rewrite the following text into a professional ${type || 'Social Media'} post with relevant emojis and popular hashtags:\n\n${prompt}`;
 
-    // Upgraded URL and Request Format for Gemini 1.5 Flash
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         contents: [
-          { 
-            parts: [{ text: fullPrompt }] 
+          {
+            parts: [{ text: fullPrompt }]
           }
         ]
       })
@@ -38,9 +37,8 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    // Check if Google sent an explicit error message
     if (data.error) {
-      return res.status(500).json({ error: `Gemini Error: ${data.error.message}` });
+      return res.status(500).json({ error: `Gemini API Error: ${data.error.message}` });
     }
 
     if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
@@ -48,7 +46,8 @@ export default async function handler(req, res) {
     } else {
       return res.status(500).json({ error: 'Invalid response format from Gemini API' });
     }
+
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: `Server Error: ${error.message}` });
   }
 }
