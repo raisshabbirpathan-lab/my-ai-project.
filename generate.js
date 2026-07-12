@@ -11,7 +11,8 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  // Vercel par humne yahi naam save kiya tha
+  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
   if (!apiKey) {
     return res.status(500).json({
@@ -23,13 +24,14 @@ export default async function handler(req, res) {
     const { prompt, type } = req.body;
 
     const fullPrompt = `
-Rewrite the following text into a professional ${type || 'Social Media'} post.
+Rewrite the following text into a professional ${type || 'Social Media'} post. 
 Add relevant emojis and hashtags.
 
 Text:
 ${prompt}
 `;
 
+    // Gemini 1.5 Flash ka sahi aur working endpoint URL
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
@@ -55,8 +57,8 @@ ${prompt}
       });
     }
 
-    const text =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    // Gemini se aane wale text response ko nikalne ka sahi tareeka
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!text) {
       return res.status(500).json({
